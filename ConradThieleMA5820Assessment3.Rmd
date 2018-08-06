@@ -1,0 +1,31 @@
+---
+title: "ConradThieleMA5820Assessment3"
+author: "Conrad Thiele"
+date: "30 July 2018"
+output: html_document
+---
+```{r include=FALSE} 
+# library(rmarkdown)
+# render("1-example.Rmd", output_format = "word_document")
+library(ggplot2)
+```
+
+### Questions:
+The lifetime of a particular type of TV follows a normal distribution with mu(mean) =4800 hours, and sigma(standard deviation)=400 hours. 
+
+(a) Find the probability that a single randomly-chosen TV will last less than 4,500 
+hours. Use R to assist with your computations.
+
+(b) Find the probability that the mean lifetime of a random sample of 16 TVs is
+less than 4,500 hours. Use R to assist with your computations.
+
+(c) Compare answers from (a) and (b).
+
+```{r}
+# create random normal distribution of 10,000 hours of TV using mean and sd 
+TV <- rnorm(10000, 4800, 400)
+pTV <- pnorm(4499, 4800, 400)
+plot(density(TV))
+abline(v=4499)
+```
+
