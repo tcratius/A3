@@ -1,6 +1,7 @@
 library(ggplot2)
 library(tidyverse)
 library(RColorBrewer)
+library(reshape2)
 
 # Constants
 less.than.value <- 4499 # Hours used x-intercept
@@ -105,24 +106,17 @@ ggplot(TV2 , aes(x, dy)) +
 # Take a random sample of 16 TV's from a sample distribution of the sample mean
 # equal to the population mean then find the mean of this subset.
 
-# mean 4800
-# sd 400
-se <- std/sqrt(1)
-z <- (4500-4800)/se
-pnorm(z)
-
-SE <- sigma/sqrt(16)
-Z <- (4500- 4800)/SE
-p.bTV <-pnorm(Z)
+SE <- sigma/sqrt(16) # Standard Error = Population mean/sqrt(16TV's)
+Z <- (4500- 4800)/SE 
+p.bTV <-pnorm(Z) 
 per.bTV <- round(p.bTV*100, 2)
-#p.bTV <- pnorm(less.than.value, meanbTV, sd.bTV, lower.tail = TRUE)
 
-#pbinom(1, 16, p.bTV)
-
+# create shade for normal distribution
 probsl <- c(0.00, p.aTV) # lower
 #probsu <- c(0.885, 1.00) # upper
 probch <- c(0.00, p.bTV)
 
+# creates the x and y values to shade in under the curve 
 TV3 <- TV %>%
   mutate(dy = approxdens(x),                         # calculate density
          p = percent_rank(x),                        # percentile rank 
@@ -132,8 +126,8 @@ TV3 <- TV %>%
                                 include.lowest = TRUE))) # based on probs
 
 
-# pcatl lower tail geom_ribbon
-# pcatch deviation from probability of population based on sample 16
+# pcatl lower tail geom_ribbon showing the population probabilty less than 4500 hours
+# pcatch lower tail geom_ribbon form probability of the 16 sample TV being less 4500 hours
 
 plotTV2 <- ggplot(TV3 , aes(x, dy)) +
               geom_ribbon(aes(ymin = 0, ymax = dy, fill = pcatl)) +
@@ -144,12 +138,14 @@ plotTV2 <- ggplot(TV3 , aes(x, dy)) +
               scale_x_continuous(
                 breaks = c(4000, less.than.value, mu, 5000, 5500, 6000),
                 labels = c('4000', less.than.value, 'Mean', '5000','5500', '6000'),
-                name = "TV Life Time (Hours)") +
+                name = 'TV Life Time (Hours)') +
               scale_y_continuous(name = 'Density') +
               scale_fill_brewer(palette = 5, labels = c(per.bTV, per.aTV)) +
               labs(col=scale_fill_brewer(palette=5)) +
               theme_minimal()
 plotTV2
+
+
 # Beta endorphins are morphine like substances produced by the body. 
 # They create a sense of well-being. It has been proposed that Beta 
 # endorphins increase with exercise. Test this hypothesis using the 
@@ -181,7 +177,6 @@ qqline(df.beta$post)
 
 qqnorm(df.beta$dif)
 qqline(df.beta$dif)
-
 
 # Histogram
 hist(df.beta$pre) # positive skew
@@ -223,8 +218,8 @@ mean.pre <- mean(df.beta$pre)
 mean.post <- mean(df.beta$post)
 std.pre <- sd(df.beta$pre)
 std.post <- sd(df.beta$post)
-rnorm.axis.pre <- 100
-rnorm.axis.post <- 100
+rnorm.axis.pre <- 1000
+rnorm.axis.post <- 1000
 
 cat('Comparisons of Pre and Post workout are: Pre = ', signif(mean.pre), 'and Post = ', signif(mean.post),
     'Shows there is\nunequal variance. Therefore, tstatistic can not be calculated.', 
@@ -236,7 +231,7 @@ result.ttest.pre.post <- t.test(df.beta$pre, df.beta$post, conf.level=0.95,
 result.ttest.pre.post
 
 par(mfrow=c(1, 1))
-library(reshape2)
+
 # create a data.frame for both pre and post graphs
 x.pre <- (x = rnorm(rnorm.axis.pre, mean.pre, std.pre))
 x.post <- (x = rnorm(rnorm.axis.post, mean.post, std.post))
@@ -245,21 +240,21 @@ x.post <- (x = rnorm(rnorm.axis.post, mean.post, std.post))
 cat('The graph below was created using the pre exercise mean', signif(mean.pre, 4),
     'and the post exercise mean', signif(mean.post,4))
 
-# plot the graph using ggplot increase the x axis limits and colour red and blue
-plot.pp <- ggplot() +
-  geom_density(aes(x=x), data=x.pre, alpha= 0.2, fill='red', size=1, show.legend = T) +
-  geom_density(aes(x=x), data=x.post, alpha=0.2, fill='blue', size=1, show.legend = T) +
-  expand_limits(x=c(-5,45))
 
 # Add both pre and post values to a data.frame and melt using reshape2
 x.pre.post <- data.frame(x.pre, x.post)
 plot.pp <- melt(x.pre.post)
 
-plot.pp
-
+# plot the graph using geom_density increase the x axis limits and 
+# colour using colour brewer
 ggplot(plot.pp ,aes(x=value, fill=variable)) + 
   geom_density(alpha=0.25) +
-  expand_limits(x=c(-5,45))
+  labs(title=('Variance between Beta levels:\nPre & Post Exercise'), 
+       fill='Exercise') +
+  scale_x_continuous(name=('x - Pre & Post')) +
+  scale_fill_brewer(palette = 5, labels=c('Pre', 'Post')) +
+  expand_limits(x=c(-5,45)) +
+  theme_minimal()
 
 # 6. If you were conducting this experiment, what would you try to do to minimise confounding?
 #    Hint: use R to assist your calculations.
