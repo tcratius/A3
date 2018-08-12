@@ -1,0 +1,395 @@
+---
+title: "ConradThieleMA5820Assessment3"
+author: "Conrad Thiele"
+output: 
+  html_document:
+    theme: journal
+  
+---
+ 
+## Question 1
+
+The lifetime of a particular type of TV follows a normal distribution with mean = 4800 hours and equal std =400 hours.  
+
+**(a) Find the probability that a single randomly-chosen TV will last less than 4,500 hours. Use R to assist with your computations.**    
+``` {r Library, include=F}
+library(ggplot2)
+library(RColorBrewer)
+library(reshape2)
+library(CatEncoders)
+library(datasets)
+library(dplyr)
+library(lawstat)
+```
+``` {r Constants, include=F}
+less.than.value <- 4500 # Hours used x-intercept
+mu <- 4800 # mean in Hour
+sigma <- 400 # sigma
+rnorm.axis <- mu * 2 # Number of values to be randomly generated 
+n.TV <- 16
+
+```
+
+``` {r Pop_Prob, include=F }
+p.aTV <- pnorm(less.than.value, mu, sigma) # Success
+p.aTV
+
+# Convert to percentage
+per.aTV <- round(p.aTV*100, 2) 
+p.aTV2 <- 1-pnorm(less.than.value, mu, sigma)
+p.aTV2 <- round(p.aTV2)
+per.aTV2 <- round(p.aTV2*100, 2)
+```
+  To calculate the probabilty of one TV, in hours, being less 4500 hours can be done using the population mean and standard deviation as we have learnt that any sample taken from the population will have a sample mean (s) that is very close to the population mean (mu).  
+  
+* mu = s.  
+
+  In the question above we are given the population mu `r mu` and sigma `r sigma` and therefore we can calculate the probability of the normal distribution of TVs lifetime in hours being less than 4500 hours is `r p.aTV`, where 0 is failure and 1 success 
+  
+> `less.than.value <- 4500`  
+> `mu <- 4800`  
+> `sigma <- 400`  
+> `p.aTV <- pnorm(less.than.value, mu, sigma)` 
+  
+####The probability of the population of TV's lifetime that is less than 4500 is `r per.aTV`%   
+In other words, if there were 100 TV, then we would successfully find `r per.aTV` TV's less 4500 hours, whereas `r per.aTV` of the results will fail to meet the this statement. Fig. 1 Shows how this looks on plotted: 
+
+
+
+``` {r Pop_dataframe, echo=F}
+
+# Create random vectors of a normal distribution using mean, standard deviation 
+# and x and assign to variable named TV
+# and then convert to a data.frame for use with ggplot
+TV <- data.frame(x = rnorm(rnorm.axis, mu, sigma))
+```
+```{r Shade1, echo=F}
+# https://stackoverflow.com/questions/3494593/shading-a-kernel-density-plot-between-two-points
+# function that approximates the density of x and y using only x value
+### 
+approxdens <- function(x) {
+  dens <- density(x)
+  f <- with(dens, approxfun(x, y))
+  f(x)
+}
+
+# Assign p.aTV to probl to be used in following function and plot
+probsl <- c(0.00, p.aTV) # lower
+# probsu <- c(0.885, 1.00) # upper
+# probch <- c(y, y) # change from lower
+
+TV2 <- TV %>%
+  mutate(dy = approxdens(x),                         # calculate density
+         p = percent_rank(x),                        # percentile rank 
+         pcatl = as.factor(cut(p, breaks = probsl,   # percentile category 
+                              include.lowest = TRUE))) #based on probs
+         #probch = as.factor(cut(p, breaks = probch,  # percentile category 
+         #                   include.lowest = TRUE))) # based on probs
+
+```
+
+```{r plot_Fig.1, echo=F}
+# Creates and plots a normal distribution of the population of a particular TV life time
+# in hours.  It takes the arguments (x, dy) from TV2, see mutate above, to shade in the
+# lower tail using geom_ribbon. Geom_line produces the normal distributed line and the 
+# rest are Aesthetics.
+
+plotTV1 <- ggplot(TV2 , aes(x, dy)) +
+              geom_ribbon(aes(ymin = 0, ymax = dy, fill = pcatl)) +
+              geom_line() +
+              labs(title=('TV Life Time - Population vs Sample'), 
+                   fill='% Pop of TV\'s') +
+              scale_x_continuous(
+                breaks = c(4000, less.than.value, mu, 5000, 5500, 6000),
+                labels = c('4000', less.than.value, 'mu', '5000','5500', '6000'),
+                name = "TV Life Time (Hours)") +
+              scale_y_continuous(name = 'Density') +
+              scale_fill_brewer(palette = 4, labels = c(per.aTV, per.aTV2) ) +
+              theme_classic()
+plotTV1
+```
+  
+  Fig. 1. Population probability of a normal distrubuted TV lifetime in hours.  
+
+```{r Pro_bTV, echo=FALSE}
+# Standard Error = Population mean/sqrt(16TV's)
+SE.TV <- sigma/sqrt(n.TV) 
+Z.TV <- (less.than.value - mu)/SE.TV 
+p.bTV <-pnorm(Z.TV) 
+per.bTV <- round(p.bTV*100, 2)
+```
+
+**(b) Find the probability that the mean lifetime of a random sample of 16 TVs is less than 4,500 hours. Use R to assist with your computations** 
+
+The popultation mean `r mu` is equal to the all the sampling distribution of the sample mean, the population mean (mu) can be used to find the standard error (SE) of the sample mean.  
+
+* Standard Error = Population mean/sqrt(16TV's)  
+
+we then find the difference of population mean (mu) and the value less than, `r less.than.value`, and divide this by the standard error (SE). This give the Z-value which is used to find the probability.  
+
+ 
+> `SE.TV <- sigma/sqrt(n.TV)`  
+> `Z.TV <- (less.than.value - mu)/SE.TV`  
+> `p.bTV <-pnorm(Z.TV)`
+  
+###The probability that the mean lifetime of a random sample of 16 TVs is less than 4,500 hours is only `r p.bTV`! where 1 is success and 0 is failure.  
+
+We could concluded that finding the mean lifetime of a random sample of 16 Tv's is less than 4500 hours is extremely unlikely, more likely to fail.
+
+**(c) Compare answers from (a) and (b).**  
+
+The answer in (b) shows how a sample mean tends to cluster around the true population mean. So as the sample size (n), the sample mean will cluster around the population mean proving that finding a sample with sample mean less than the population mean is unlikely.  
+
+This clustering can be seen in Fig. 2, where pink represents the population and blue represents a sample of the population. 
+
+```{r plotTV_Fig.2, echo=F}
+
+TV3 <- data.frame(x = rnorm(rnorm.axis, mu, sigma))
+TV4 <- data.frame(x2 = rnorm(rnorm.axis, mu, (sigma/n.TV)))
+
+plotTV <- ggplot() +
+  geom_density(aes(x=x), data=TV3, alpha= 0.2, fill="red" ) +
+  geom_density(aes(x=x2), data=TV4, alpha=0.1, fill="blue") +
+  theme_classic()
+  
+plotTV
+```
+Fig. 2. Clustering  
+
+## Question 2
+**Beta endorphins are morphine like substances produced by the body. They create a sense of well-being. It has been proposed that Beta endorphins increase with exercise. Test this hypothesis using the data in beta.csv which has Beta endorphin levels for 10 people measured for each person pre- and post exercise. Using this sample, test if Beta endorphins increase with exercise. Adopt a 5% risk of committing a type I error.**
+
+
+**1. Enter the data into R.**
+```{r data_in}
+beta <- read.csv(choose.files())
+```
+**2. Perform some exploratory data analysis procedures.**
+```{r View}
+
+View(beta)
+str(beta)
+```
+
+```{r add_to_dataframe, echo=F}
+df.beta <- data.frame(beta) # create data.frame
+```
+
+```{r Hist_Q-Qplot, echo=F}
+par(mfrow=c(1,2)) # two columns for plotting
+hist(df.beta$pre, xlab="Pre"); qqnorm(df.beta$pre); qqline(df.beta$pre)
+hist(df.beta$post, xlab="Pre"); qqnorm(df.beta$post); qqline(df.beta$post)
+```
+Fig. 3. Histogram and Q-Qplot.  
+
+
+
+```{r Boxplot_pre_post, echo=F}
+par(mfrow=c(1,2))
+boxplot(df.beta$pre, xlab= "Pre")
+boxplot(df.beta$post, xlab= "Post")
+```
+Fig. 4.  
+Outliers present in "Post"" and "Dif"" were removed before statistical testing as seen in Fig. 5. There appears to be differences in variance between "Pre" and "Post" which, is futher noted in Fig. 6  
+
+```{r remove_outlier_post, echo=F}
+boxplot.stats(df.beta$post)
+df.beta$post[df.beta$post %in% boxplot.stats(df.beta$post)$out] <- NA
+df.beta.par <- na.omit(df.beta) # na.omit removes outliers
+```
+
+```{r boxplot_outliers_removed, echo=F}
+par(mfrow=c(1,1))
+boxplot(df.beta.par)
+```
+Fig. 5. Boxplot minus outliers.
+
+```{r variance, echo=F}
+mean.pre <- mean(df.beta.par$pre)
+mean.post <- mean(df.beta.par$post)
+std.pre <- sd(df.beta.par$pre)
+std.post <- sd(df.beta.par$post)
+
+rnorm.axis.pre <- 1000
+rnorm.axis.post <- 1000
+# create a data.frame for both pre and post graphs
+x.pre <- (x = rnorm(rnorm.axis.pre, mean.pre, std.pre))
+x.post <- (x = rnorm(rnorm.axis.post, mean.post, std.post))
+
+# Add both pre and post values to a data.frame and melt using reshape2
+x.pre.post <- data.frame(x.pre, x.post)
+plot.pp <- melt(x.pre.post)
+
+# plot the graph using geom_density increase the x axis limits and 
+# colour using colour brewer
+ggplot(plot.pp ,aes(x=value, fill=variable)) + 
+  geom_density(alpha=0.25) +
+  labs(title=('Variance between Beta levels:\nPre & Post Exercise'), 
+       fill='Exercise') +
+  scale_x_continuous(name=('x - Pre & Post')) +
+  scale_fill_brewer(palette = 5, labels=c('Pre', 'Post')) +
+  expand_limits(x=c(-5,45)) +
+  theme_classic()
+```
+Fig. 6. Variance detected.  
+
+**4. Perform an appropriate significance test.**
+
+**Weslh Two Paired sample T-Test for unequal variances** 
+
+Pre *Beta* endorphins = Post *Beta* endorphins  
+
+Pre *Beta* endorphins < Post *Beta* endorphins  
+```{r welsh_test, echo=F}
+welsh.pre.less.post <- t.test(df.beta.par$pre, 
+                              df.beta.par$post, 
+                              conf.level=0.95,
+                              var.equal = FALSE, alternative = 'less') 
+welsh.pre.less.post # 2.856e-06
+```
+Fig. 7. Welsh t-test for unequal variance.  
+
+Conclusion: At 0.05 significance level, we conclude that the post exercise levels of Beta endorphins are significantly greater than pre exercise levels of Beta endorphins.
+
+**5. State any assumptions needed to support the validity of the procedure and where possible comment on the adequacy of these assumptions:**
+ 
+* Population of different scores is normally distributed: from looking at the Q-Q plot, it is reasonable to assume normality.
+* The two samples are dependent: Yes, the dependent variable difference (diff) is dependent on the two independent variables pre and post (exercise).
+* Data values are obtained by independent random sampling: For the tests it has been assumed that simple random sampling has been performed. Ideally there would be a treatment and control group.
+* Equal variance or standard deviations in the groups: There is definitely not equal variance in the variables pre and post.
+
+
+**6. If you were conducting this experiment, what would you try to do to minimise confounding? Hint: use R to assist your calculations.**  
+
+* (a) Check for correlation between "Pre" and "Post" in dataset Beta using method Kendall. Negative correlation found.  As one variable goes up, the other variable goes down.
+
+```{r correlation, echo=F}
+cor(df.beta$post, df.beta$pre, method = "kendall" )
+```
+Fig. 8 Kendall correlation.  
+
+```{r lm_summary, echo=F}
+lm.beta <- lm(pre ~ post + subject, data=df.beta)
+summary(lm.beta)
+```
+Fig. 9. Linear model Subject Pre beta levels  
+
+(b) Approximately 98% of variation Pre beta levels can be explained by our model (Post and Subject) suggest very little association with any other variables.
+
+##Question 3.  
+```{r constant(s), echo=F}
+n.pg <- 10 # from count.factors
+```
+
+**1. Check that you have access to the data.**
+```{r check_data, echo=F}
+
+data(PlantGrowth)
+View(PlantGrowth)
+str(PlantGrowth)
+```
+These data are obtained from an experiment to compare plant yields under a control and two other treatments. Test if there is a difference between the control group and treatment 2 on mean plant yields.  
+
+
+(a) Removed contents of weight by factor name "trt1" and then removed the factor "trt1" from the level.  
+```{r remove_trt1}
+
+PlantGrowth.ctrl.trt2 <- PlantGrowth[which(!PlantGrowth$group %in% 'trt1'), ]
+
+
+PlantGrowth.ctrl.trt2$group <-  levels(droplevels(PlantGrowth.ctrl.trt2$group))
+```
+Fig. 10. Remove group factor trt1.  
+
+**2. Perform some exploratory data analysis procedures.**   
+
+(a) Boxplot and Standard residuals, both show normality around mean (Fig.9.).  
+
+```{r data_expl, echo=F}
+par(mfrow=c(1,2))
+boxplot(weight ~ group, data=PlantGrowth.ctrl.trt2)
+# linear model using the least square method 
+PlantGrowth.lm = lm(weight ~ group, data=PlantGrowth.ctrl.trt2) 
+# Standard residual - difference between the observed value of the dependent variable (y)
+PlantGrowth.stdres = rstandard(PlantGrowth.lm) 
+
+# Plot the residual
+qqnorm(PlantGrowth.stdres, 
+       ylab = "Standard Residual",
+       xlab = "normal scores",
+       main = "Plant Growth Treatment 2 vs Control")
+qqline(PlantGrowth.stdres)
+```
+
+(b) Subset group 'ctrl' and 'trt2' and then Q-Q plot, both show normality around mean (Fig. 10.).   
+
+```{r sub_groups}
+
+PlantGrowth.sub.ctrl <-  subset(PlantGrowth.ctrl.trt2, group=='ctrl', 
+                                    select=c(group,weight))
+
+PlantGrowth.sub.trt2 <-  subset(PlantGrowth.ctrl.trt2, group=='trt2', 
+                                    select=c(group,weight))
+```
+```{r Q-Qplot, echo=F}
+par(mfrow=c(1,2))
+qqnorm(PlantGrowth.sub.ctrl$weight);
+qqline(PlantGrowth.sub.ctrl$weight)
+
+qqnorm(PlantGrowth.sub.trt2$weight);
+qqline(PlantGrowth.sub.trt2$weight)
+```
+Fig.10. Q-Q Plot "ctrl" and "trt2".  
+
+(c) Summary shows equal variance between "ctrl" and "trt2" weights.
+```{r Summary, echo=F}
+par(mfrow=c(1,2))
+PlantGrowth.summary.ctrl <-  PlantGrowth.sub.ctrl %>%
+  group_by(group == 'ctrl') %>%
+  summarise(sum= sum(weight),mean = mean(weight), std = sd(weight), SE = sd(weight)/sqrt(n.pg))
+PlantGrowth.summary.ctrl
+
+PlantGrowth.summary.trt2 <-  PlantGrowth.sub.trt2 %>%
+  group_by(group == 'trt2') %>%
+  summarise(sum = sum(weight),mean = mean(weight), std = sd(weight), SE = sd(weight)/sqrt(n.pg))
+PlantGrowth.summary.trt2
+```
+Fig. 11. Summary of "ctrl" and "trt2".  
+**3. Perform an appropriate significance test.**  
+
+(a) Independent two group t-test for equal variances.  
+
+t.test(y~x) # where y is numeric and x is a binary factor  
+
+Ho: ctrl = trt2  
+
+Ha: ctrl < trt2
+
+```{r t_test}
+test.this <- t.test(PlantGrowth.ctrl.trt2$weight ~ PlantGrowth.ctrl.trt2$group, 
+                    conf.level=0.95, var.equal=T, alternative="less")
+test.this
+```
+At .05 significance level, we conclude that the weight for "ctrl" and "trt2" could be identical populations.
+
+**4. State any assumptions needed to support the validity of the procedure and where possible
+comment on the adequacy of these assumptions.**  
+
+Population is appoximately normally distributed. The Q-Q plot, residual Q-Q plot and Boxplot of 
+the sample data, shown above, indicates that this is a reasonable assumption.
+The two populations have the same variance. Yes this was confirmed, see Fig. 11.
+The two samples are independent of each other. Yes
+Randomly sampling of the population were performed. Yes
+
+##Bibliography (Harvard)  
+
+
+Bonnini, S, Corain, L, & Marozzi, M 2014, Nonparametric Hypothesis Testing : Rank and Permutation Methods with Applications in R, John Wiley & Sons, Incorporated, New York. Available from: ProQuest Ebook Central. [11 August 2018].  
+
+Jcu.edu.au. (2018). [online] Available at: https://www.jcu.edu.au/__data/assets/pdf_file/0008/115478/Basic-Statistics-6_Sample-vs-Population-Distributions.pdf [Accessed 12 Aug. 2018].  
+
+R-tutor.com. (2018). Normal Probability Plot of Residuals | R Tutorial. [online] Available at: http://www.r-tutor.com/elementary-statistics/simple-linear-regression/normal-probability-plot-residuals [Accessed 12 Aug. 2018].  
+
+Sphweb.bumc.bu.edu. (2018). Regression Analysis. [online] Available at: http://sphweb.bumc.bu.edu/otlt/MPH-Modules/BS/BS704_Multivariable/BS704_Multivariable6.html [Accessed 12 Aug. 2018].  
+
+Theanalysisfactor.com. (2018). Logistic Regression Analysis: Understanding Odds and Probability. [online] Available at: https://www.theanalysisfactor.com/understanding-odds-and-probability/ [Accessed 12 Aug. 2018].  
